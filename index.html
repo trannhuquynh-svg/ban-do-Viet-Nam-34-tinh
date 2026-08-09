@@ -41,7 +41,7 @@
         </div>
     </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const db = {
             "Lào Cai": { pop: "1.778.785 người", size: "13.256,92 km²", tour: "Sapa, Fansipan, Bản Cát Cát, Y Tý", special: "Sáp nhập Yên Bái và Lào Cai." },
@@ -95,7 +95,6 @@
         const sortedKeys = Object.keys(db).sort();
         const listContainer = document.getElementById('list');
 
-        // Hàm cleanStr được nâng cấp: loại bỏ toàn bộ khoảng trắng và dấu để khớp tuyệt đối
         function cleanStr(str) {
             if (!str) return '';
             return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
@@ -103,8 +102,12 @@
 
         function findDbName(gadmName) {
             if (!gadmName) return null;
-            if (gadmName.toLowerCase().includes("ho chi minh")) return "TP. Hồ Chí Minh";
             const cleanGadm = cleanStr(gadmName);
+            
+            // Xử lý các vùng sáp nhập đặc thù
+            if (cleanGadm.includes("hochiminh")) return "TP. Hồ Chí Minh";
+            if (cleanGadm.includes("daknong")) return "Lâm Đồng";
+
             return sortedKeys.find(key => cleanStr(key) === cleanGadm) || null;
         }
 
