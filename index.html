@@ -8,14 +8,14 @@
         body { margin: 0; display: flex; height: 100vh; background: #0b0f19; color: white; font-family: sans-serif; overflow: hidden; }
         #sidebar { width: 350px; background: #0f172a; border-right: 1px solid #1e293b; display: flex; flex-direction: column; }
         .search { padding: 15px; border-bottom: 1px solid #1e293b; }
-        #search-input { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #1e293b; background: #1e293b; color: white; box-sizing: border-box; }
+        #search-input { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #1e293b; background: #1e293b; color: white; box-sizing: border-box; outline: none; }
         #list { flex: 1; overflow-y: auto; padding: 5px; }
         .item { padding: 12px; cursor: pointer; border-radius: 4px; font-size: 13px; }
         .item:hover, .item.active { background: #1e293b; color: #38bdf8; }
         #map { flex: 1; position: relative; }
-        #info { position: absolute; bottom: 20px; right: 20px; width: 320px; background: rgba(15, 23, 42, 0.9); padding: 20px; border-radius: 8px; border: 1px solid #38bdf8; z-index: 1000; }
-        .label { color: #94a3b8; font-size: 10px; text-transform: uppercase; }
-        .value { margin-bottom: 12px; font-weight: 600; }
+        #info { position: absolute; bottom: 20px; right: 20px; width: 320px; background: rgba(15, 23, 42, 0.95); padding: 20px; border-radius: 8px; border: 1px solid #38bdf8; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .label { color: #94a3b8; font-size: 10px; text-transform: uppercase; margin-bottom: 2px; }
+        .value { margin-bottom: 12px; font-weight: 600; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -26,7 +26,7 @@
     </div>
     <div id="map">
         <div id="info">
-            <h3 id="info-name" style="color:#38bdf8; margin-top:0">Chọn tỉnh</h3>
+            <h3 id="info-name" style="color:#38bdf8; margin-top:0; font-size: 16px; border-bottom: 1px solid #1e293b; padding-bottom: 8px;">Chọn tỉnh</h3>
             <div class="label">Dân số</div><div id="info-pop" class="value">-</div>
             <div class="label">Diện tích</div><div id="info-size" class="value">-</div>
             <div class="label">Du lịch</div><div id="info-tour" class="value">-</div>
@@ -36,30 +36,37 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Dữ liệu tỉnh sau sáp nhập
         const dataDB = {
-            "Lâm Đồng": { pop: "3.872.999 người", size: "24.233,07 km²", tour: "Đà Lạt, Thung lũng Tình yêu, Hồ Tuyền Lâm", special: "Sáp nhập Đắk Nông, Bình Thuận, Lâm Đồng." },
-            "Đắk Lắk": { pop: "3.346.853 người", size: "18.096,40 km²", tour: "Buôn Đôn, Thác Dray Nur", special: "Sáp nhập Phú Yên và Đắk Lắk." }
-            // ... thêm các tỉnh khác của cậu vào đây
+            "Lâm Đồng": { pop: "3.872.999 người", size: "24.233,07 km²", tour: "Đà Lạt, Thung lũng Tình yêu, Hồ Tuyền Lâm, Langbiang", special: "Sáp nhập Đắk Nông, Bình Thuận, Lâm Đồng." },
+            "Đắk Lắk": { pop: "3.346.853 người", size: "18.096,40 km²", tour: "Buôn Đôn, Hồ Lắk, Thác Dray Nur", special: "Sáp nhập Phú Yên và Đắk Lắk." }
         };
 
-        // BẢN ĐỒ ÁNH XẠ: Nếu click vùng tên cũ, hiển thị dữ liệu tỉnh mới
+        // Hàm chuẩn hóa chuỗi (loại bỏ dấu tiếng Việt, khoảng trắng và chữ hoa)
+        function cleanStr(str) {
+            if (!str) return '';
+            return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
+        }
+
+        // Bản đồ ánh xạ linh hoạt theo dạng chuẩn hóa
         const mapping = {
-            "Dak Nong": "Lâm Đồng",
-            "Binh Thuan": "Lâm Đồng",
-            "Lam Dong": "Lâm Đồng",
-            "Dak Lak": "Đắk Lắk",
-            "Phu Yen": "Đắk Lắk"
+            "daknong": "Lâm Đồng",
+            "binhthuan": "Lâm Đồng",
+            "lamdong": "Lâm Đồng",
+            "daklak": "Đắk Lắk",
+            "phuyen": "Đắk Lắk"
         };
 
         const map = L.map('map', {zoomControl: false}).setView([16, 107.5], 6);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {subdomains: 'abcd'}).addTo(map);
 
         let geojsonLayer;
+        const listContainer = document.getElementById('list');
 
-        function updateInfo(name) {
-            const targetName = mapping[name] || name;
+        function updateInfo(rawName) {
+            const keyClean = cleanStr(rawName);
+            const targetName = mapping[keyClean] || rawName;
             const info = dataDB[targetName];
+
             document.getElementById('info-name').innerText = targetName;
             if (info) {
                 document.getElementById('info-pop').innerText = info.pop;
@@ -69,6 +76,7 @@
             } else {
                 document.getElementById('info-pop').innerText = "Đang cập nhật";
                 document.getElementById('info-size').innerText = "Đang cập nhật";
+                document.getElementById('info-tour').innerText = "Đang cập nhật";
                 document.getElementById('info-special').innerText = "Khu vực ngoài danh sách.";
             }
         }
@@ -77,11 +85,24 @@
             .then(r => r.json())
             .then(data => {
                 geojsonLayer = L.geoJSON(data, {
-                    style: { color: '#38bdf8', weight: 1, fillOpacity: 0.2 },
+                    style: { color: '#38bdf8', weight: 1, fillOpacity: 0.2, fillColor: '#38bdf8' },
                     onEachFeature: (f, l) => {
-                        l.on('click', () => updateInfo(f.properties.NAME_1));
+                        l.on('click', (e) => {
+                            // Reset style các vùng khác nếu cần, highlight vùng được chọn
+                            updateInfo(f.properties.NAME_1);
+                            map.fitBounds(e.target.getBounds(), { padding: [50, 50], maxZoom: 9 });
+                        });
                     }
                 }).addTo(map);
+
+                // Render danh sách bên sidebar
+                Object.keys(dataDB).forEach(name => {
+                    const div = document.createElement('div');
+                    div.className = 'item';
+                    div.innerText = name;
+                    div.onclick = () => updateInfo(name);
+                    listContainer.appendChild(div);
+                });
             });
     </script>
 </body>
