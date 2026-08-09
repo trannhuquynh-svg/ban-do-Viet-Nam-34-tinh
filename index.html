@@ -124,9 +124,6 @@
             });
         }
 
-        // Tải trực tiếp file qua script tag hoặc fetch file nhỏ, ở đây dùng cách tối ưu: 
-        // Nếu file JSON bị nặng trên hosting, ta đổi sang dùng fetch đúng tên file, nhưng kiểm tra lại tên.
-        // Đảm bảo file trong thư mục tên đúng chuẩn "gadm41_VNM_1.json"
         fetch('gadm41_VNM_1.json')
             .then(res => {
                 if (!res.ok) throw new Error("Không tìm thấy file json");
@@ -137,7 +134,6 @@
             })
             .catch(err => {
                 console.log("Lỗi tải file, đang thử đường dẫn thay thế...");
-                // Dự phòng nếu đặt sai thư mục
                 fetch('./gadm41_VNM_1.json')
                     .then(res => res.json())
                     .then(data => initMap(data));
