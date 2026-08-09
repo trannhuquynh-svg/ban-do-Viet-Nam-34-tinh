@@ -46,7 +46,7 @@
             return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
         }
 
-        // Bản đồ ánh xạ toàn diện các tên vùng cũ trong GeoJSON về tỉnh mới sau sáp nhập
+        // Gom nhóm các tỉnh cũ trong file GADM về chung 1 tỉnh mới sau sáp nhập
         const mapping = {
             "daknong": "Lâm Đồng",
             "binhthuan": "Lâm Đồng",
@@ -59,14 +59,11 @@
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {subdomains: 'abcd'}).addTo(map);
 
         let geojsonLayer;
-        let activeLayer = null;
+        let activeLayers = []; // Lưu danh sách các mảnh đang được highlight chung một tỉnh
         const listContainer = document.getElementById('list');
 
-        function updateInfoByRawName(rawName) {
-            const keyClean = cleanStr(rawName);
-            const targetName = mapping[keyClean] || rawName;
+        function selectProvince(targetName) {
             const info = dataDB[targetName];
-
             document.getElementById('info-name').innerText = targetName;
             if (info) {
                 document.getElementById('info-pop').innerText = info.pop;
@@ -79,6 +76,20 @@
                 document.getElementById('info-tour').innerText = "Đang cập nhật";
                 document.getElementById('info-special').innerText = "Khu vực ngoài danh sách.";
             }
+
+            // Reset style tất cả các mảnh đang được chọn trước đó
+            activeLayers.forEach(l => geojsonLayer.resetStyle(l));
+            activeLayers = [];
+
+            // Tìm và highlight tất cả các mảnh thuộc tỉnh mới này
+            geojsonLayer.eachLayer(layer => {
+                const rawName = layer.feature.properties.NAME_1;
+                const mapped = mapping[cleanStr(rawName)] || rawName;
+                if (mapped === targetName) {
+                    layer.setStyle({ color: '#facc15', fillColor: '#facc15', fillOpacity: 0.4, weight: 2 });
+                    activeLayers.push(layer);
+                }
+            });
         }
 
         fetch('gadm41_VNM_1.json')
@@ -87,15 +98,10 @@
                 geojsonLayer = L.geoJSON(data, {
                     style: { color: '#38bdf8', weight: 1, fillOpacity: 0.2, fillColor: '#38bdf8' },
                     onEachFeature: (f, l) => {
-                        l.on('click', (e) => {
-                            if (activeLayer) {
-                                geojsonLayer.resetStyle(activeLayer);
-                            }
-                            activeLayer = l;
-                            l.setStyle({ color: '#facc15', fillColor: '#facc15', fillOpacity: 0.4, weight: 2 });
-
-                            updateInfoByRawName(f.properties.NAME_1);
-                            map.fitBounds(e.target.getBounds(), { padding: [50, 50], maxZoom: 9 });
+                        l.on('click', () => {
+                            const rawName = f.properties.NAME_1;
+                            const targetName = mapping[cleanStr(rawName)] || rawName;
+                            selectProvince(targetName);
                         });
                     }
                 }).addTo(map);
@@ -105,9 +111,7 @@
                     const div = document.createElement('div');
                     div.className = 'item';
                     div.innerText = name;
-                    div.onclick = () => {
-                        updateInfoByRawName(name);
-                    };
+                    div.onclick = () => selectProvince(name);
                     listContainer.appendChild(div);
                 });
             });
