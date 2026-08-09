@@ -41,13 +41,12 @@
             "Đắk Lắk": { pop: "3.346.853 người", size: "18.096,40 km²", tour: "Buôn Đôn, Hồ Lắk, Thác Dray Nur", special: "Sáp nhập Phú Yên và Đắk Lắk." }
         };
 
-        // Hàm chuẩn hóa chuỗi (loại bỏ dấu tiếng Việt, khoảng trắng và chữ hoa)
         function cleanStr(str) {
             if (!str) return '';
             return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
         }
 
-        // Bản đồ ánh xạ linh hoạt theo dạng chuẩn hóa
+        // Bản đồ ánh xạ toàn diện các tên vùng cũ trong GeoJSON về tỉnh mới sau sáp nhập
         const mapping = {
             "daknong": "Lâm Đồng",
             "binhthuan": "Lâm Đồng",
@@ -60,9 +59,10 @@
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {subdomains: 'abcd'}).addTo(map);
 
         let geojsonLayer;
+        let activeLayer = null;
         const listContainer = document.getElementById('list');
 
-        function updateInfo(rawName) {
+        function updateInfoByRawName(rawName) {
             const keyClean = cleanStr(rawName);
             const targetName = mapping[keyClean] || rawName;
             const info = dataDB[targetName];
@@ -88,19 +88,26 @@
                     style: { color: '#38bdf8', weight: 1, fillOpacity: 0.2, fillColor: '#38bdf8' },
                     onEachFeature: (f, l) => {
                         l.on('click', (e) => {
-                            // Reset style các vùng khác nếu cần, highlight vùng được chọn
-                            updateInfo(f.properties.NAME_1);
+                            if (activeLayer) {
+                                geojsonLayer.resetStyle(activeLayer);
+                            }
+                            activeLayer = l;
+                            l.setStyle({ color: '#facc15', fillColor: '#facc15', fillOpacity: 0.4, weight: 2 });
+
+                            updateInfoByRawName(f.properties.NAME_1);
                             map.fitBounds(e.target.getBounds(), { padding: [50, 50], maxZoom: 9 });
                         });
                     }
                 }).addTo(map);
 
-                // Render danh sách bên sidebar
+                // Render danh sách sidebar
                 Object.keys(dataDB).forEach(name => {
                     const div = document.createElement('div');
                     div.className = 'item';
                     div.innerText = name;
-                    div.onclick = () => updateInfo(name);
+                    div.onclick = () => {
+                        updateInfoByRawName(name);
+                    };
                     listContainer.appendChild(div);
                 });
             });
