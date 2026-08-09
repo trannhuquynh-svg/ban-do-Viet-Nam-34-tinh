@@ -124,40 +124,56 @@
             });
         }
 
-        // Dùng file GeoJSON mẫu trực tuyến nhẹ để test hiển thị ranh giới chuẩn xác ngay lập tức
-        fetch('https://raw.githubusercontent.com/thanglequoc/vietnam-json/master/vietnam.json')
-            .then(res => res.json())
+        // Tải trực tiếp file qua script tag hoặc fetch file nhỏ, ở đây dùng cách tối ưu: 
+        // Nếu file JSON bị nặng trên hosting, ta đổi sang dùng fetch đúng tên file, nhưng kiểm tra lại tên.
+        // Đảm bảo file trong thư mục tên đúng chuẩn "gadm41_VNM_1.json"
+        fetch('gadm41_VNM_1.json')
+            .then(res => {
+                if (!res.ok) throw new Error("Không tìm thấy file json");
+                return res.json();
+            })
             .then(data => {
-                geojsonLayer = L.geoJSON(data, {
-                    style: { color: '#38bdf8', weight: 1.5, fillOpacity: 0.25, fillColor: '#38bdf8' },
-                    onEachFeature: (feature, layer) => {
-                        const dbName = findDbName(feature.properties.name || feature.properties.NAME_1);
-                        layer.on('click', () => {
-                            if (dbName) {
-                                highlightAndSelect(dbName, layer);
-                            } else {
-                                if (activeLayer) geojsonLayer.resetStyle(activeLayer);
-                                activeLayer = layer;
-                                layer.setStyle({ color: '#facc15', fillColor: '#facc15', fillOpacity: 0.4, weight: 2.5 });
-                                document.querySelectorAll('.item').forEach(i => i.classList.remove('active'));
-                                
-                                document.getElementById('info-name').innerText = feature.properties.name || feature.properties.NAME_1;
-                                document.getElementById('info-pop').innerText = "Đang cập nhật";
-                                document.getElementById('info-size').innerText = "Đang cập nhật";
-                                document.getElementById('info-tour').innerText = "Đang cập nhật";
-                                document.getElementById('info-special').innerText = "Khu vực ngoài danh sách sáp nhập.";
-                            }
-                        });
-                    }
-                }).addTo(map);
-
-                renderList();
-                if (sortedKeys.length > 0) {
-                    const firstKey = sortedKeys[0];
-                    const firstLayer = geojsonLayer.getLayers().find(l => findDbName(l.feature.properties.name || l.feature.properties.NAME_1) === firstKey);
-                    if (firstLayer) highlightAndSelect(firstKey, firstLayer);
-                }
+                initMap(data);
+            })
+            .catch(err => {
+                console.log("Lỗi tải file, đang thử đường dẫn thay thế...");
+                // Dự phòng nếu đặt sai thư mục
+                fetch('./gadm41_VNM_1.json')
+                    .then(res => res.json())
+                    .then(data => initMap(data));
             });
+
+        function initMap(data) {
+            geojsonLayer = L.geoJSON(data, {
+                style: { color: '#38bdf8', weight: 1.5, fillOpacity: 0.25, fillColor: '#38bdf8' },
+                onEachFeature: (feature, layer) => {
+                    const dbName = findDbName(feature.properties.NAME_1);
+                    layer.on('click', () => {
+                        if (dbName) {
+                            highlightAndSelect(dbName, layer);
+                        } else {
+                            if (activeLayer) geojsonLayer.resetStyle(activeLayer);
+                            activeLayer = layer;
+                            layer.setStyle({ color: '#facc15', fillColor: '#facc15', fillOpacity: 0.4, weight: 2.5 });
+                            document.querySelectorAll('.item').forEach(i => i.classList.remove('active'));
+                            
+                            document.getElementById('info-name').innerText = feature.properties.NAME_1;
+                            document.getElementById('info-pop').innerText = "Đang cập nhật";
+                            document.getElementById('info-size').innerText = "Đang cập nhật";
+                            document.getElementById('info-tour').innerText = "Đang cập nhật";
+                            document.getElementById('info-special').innerText = "Khu vực ngoài danh sách sáp nhập.";
+                        }
+                    });
+                }
+            }).addTo(map);
+
+            renderList();
+            if (sortedKeys.length > 0) {
+                const firstKey = sortedKeys[0];
+                const firstLayer = geojsonLayer.getLayers().find(l => findDbName(l.feature.properties.NAME_1) === firstKey);
+                if (firstLayer) highlightAndSelect(firstKey, firstLayer);
+            }
+        }
 
         function highlightAndSelect(name, layer) {
             if (activeLayer) {
