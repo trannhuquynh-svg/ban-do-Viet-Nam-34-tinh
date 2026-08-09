@@ -41,9 +41,8 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Dữ liệu đầy đủ 34 đơn vị hành chính theo phương án sáp nhập mới
         const db = {
             "Lào Cai": { pop: "1.778.785 người", size: "13.256,92 km²", tour: "Sapa, Fansipan, Bản Cát Cát, Y Tý", special: "Sáp nhập Yên Bái và Lào Cai." },
             "Thái Nguyên": { pop: "1.799.489 người", size: "8.375,21 km²", tour: "Hồ Núi Cốc, Chợ Thái, Đan viện Chợ Chu", special: "Sáp nhập Bắc Kạn và Thái Nguyên." },
@@ -79,7 +78,6 @@
             "Hà Tĩnh": { pop: "1.300.000 người", size: "5.997 km²", tour: "Biển Thiên Cầm, Ngã ba Đồng Lộc, Chùa Hương Tích", special: "Hiếu học." },
             "Bình Định": { pop: "1.500.000 người", size: "6.066 km²", tour: "Eo Gió, Kỳ Co, Tháp Đôi, Ghềnh Ráng Tiên Sa", special: "Đất võ." },
             "Phú Yên": { pop: "1.000.000 người", size: "5.045 km²", tour: "Gành Đá Đĩa, Bãi Xép (Hoa vàng cỏ xanh), Hòn Yến", special: "Hoa vàng cỏ xanh." },
-            // Bổ sung thêm Long An và Kiên Giang để đảm bảo không bị sót
             "Kiên Giang": { pop: "1.725.350 người", size: "6.348,38 km²", tour: "Phú Quốc, Quần đảo Nam Du, Hòn Sơn, U Minh Thượng", special: "Vùng biển đảo Tây Nam." },
             "Long An": { pop: "1.767.750 người", size: "4.494,02 km²", tour: "Làng nổi Tân Lập, Cánh đồng bất tận, Khu di tích Vàm Nhựt Tảo", special: "Cửa ngõ miền Tây." }
         };
@@ -97,7 +95,7 @@
         const sortedKeys = Object.keys(db).sort();
         const listContainer = document.getElementById('list');
 
-        // Hàm chuẩn hóa chuỗi: bỏ dấu, xóa khoảng trắng và ký tự đặc biệt để so khớp chính xác dù file geojson bị dính liền tên
+        // Hàm cleanStr được nâng cấp: loại bỏ toàn bộ khoảng trắng và dấu để khớp tuyệt đối
         function cleanStr(str) {
             if (!str) return '';
             return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
@@ -107,7 +105,7 @@
             if (!gadmName) return null;
             if (gadmName.toLowerCase().includes("ho chi minh")) return "TP. Hồ Chí Minh";
             const cleanGadm = cleanStr(gadmName);
-            return sortedKeys.find(key => cleanStr(key) === cleanGadm || cleanGadm.includes(cleanStr(key))) || null;
+            return sortedKeys.find(key => cleanStr(key) === cleanGadm) || null;
         }
 
         function renderList(filter = "") {
@@ -130,14 +128,9 @@
         }
 
         fetch('gadm41_VNM_1.json')
-            .then(res => {
-                if (!res.ok) throw new Error("Không tìm thấy file json");
-                return res.json();
-            })
-            .then(data => {
-                initMap(data);
-            })
-            .catch(err => {
+            .then(res => res.json())
+            .then(data => initMap(data))
+            .catch(() => {
                 fetch('./gadm41_VNM_1.json')
                     .then(res => res.json())
                     .then(data => initMap(data));
