@@ -66,18 +66,20 @@
             "Đồng Tháp": { pop: "4.370.046 người", size: "5.938,64 km²", tour: "Làng hoa Sa Đéc", special: "Sáp nhập Tiền Giang và Đồng Tháp." },
             "Cà Mau": { pop: "2.606.672 người", size: "7.942,39 km²", tour: "Mũi Cà Mau", special: "Sáp nhập Bạc Liêu và Cà Mau." },
             "An Giang": { pop: "4.952.238 người", size: "9.888,91 km²", tour: "Trà Sư", special: "Sáp nhập Kiên Giang và An Giang." },
-            "Hà Nội": { pop: "8.500.000", size: "3.359 km²", tour: "Hồ Gươm", special: "Thủ đô." },
-            "Hà Giang": { pop: "880.000", size: "7.929 km²", tour: "Đồng Văn", special: "Cực Bắc." },
-            "Cao Bằng": { pop: "540.000", size: "6.700 km²", tour: "Thác Bản Giốc", special: "Lịch sử cách mạng." },
-            "Lạng Sơn": { pop: "800.000", size: "8.310 km²", tour: "Đồng Đăng", special: "Cửa khẩu." },
-            "Sơn La": { pop: "1.280.000", size: "14.123 km²", tour: "Mộc Châu", special: "Tây Bắc." },
-            "Lai Châu": { pop: "470.000", size: "9.068 km²", tour: "Ô Quy Hồ", special: "Vùng cao." },
-            "Điện Biên": { pop: "630.000", size: "9.541 km²", tour: "Đồi A1", special: "Chiến thắng lịch sử." },
-            "Thanh Hóa": { pop: "3.645.000", size: "11.114 km²", tour: "Sầm Sơn", special: "Miền Trung." },
-            "Nghệ An": { pop: "3.400.000", size: "16.490 km²", tour: "Làng Sen", special: "Quê Bác." },
-            "Hà Tĩnh": { pop: "1.300.000", size: "5.997 km²", tour: "Thiên Cầm", special: "Hiếu học." },
-            "Bình Định": { pop: "1.500.000", size: "6.066 km²", tour: "Eo Gió", special: "Đất võ." },
-            "Phú Yên": { pop: "1.000.000", size: "5.045 km²", tour: "Gành Đá Đĩa", special: "Hoa vàng cỏ xanh." }
+            "Hà Nội": { pop: "8.500.000 người", size: "3.359 km²", tour: "Hồ Gươm", special: "Thủ đô." },
+            "Hà Giang": { pop: "880.000 người", size: "7.929 km²", tour: "Đồng Văn", special: "Cực Bắc." },
+            "Cao Bằng": { pop: "540.000 người", size: "6.700 km²", tour: "Thác Bản Giốc", special: "Lịch sử cách mạng." },
+            "Lạng Sơn": { pop: "800.000 người", size: "8.310 km²", tour: "Đồng Đăng", special: "Cửa khẩu." },
+            "Sơn La": { pop: "1.280.000 người", size: "14.123 km²", tour: "Mộc Châu", special: "Tây Bắc." },
+            "Lai Châu": { pop: "470.000 người", size: "9.068 km²", tour: "Ô Quy Hồ", special: "Vùng cao." },
+            "Điện Biên": { pop: "630.000 người", size: "9.541 km²", tour: "Đồi A1", special: "Chiến thắng lịch sử." },
+            "Thanh Hóa": { pop: "3.645.000 người", size: "11.114 km²", tour: "Sầm Sơn", special: "Miền Trung." },
+            "Nghệ An": { pop: "3.400.000 người", size: "16.490 km²", tour: "Làng Sen", special: "Quê Bác." },
+            "Hà Tĩnh": { pop: "1.300.000 người", size: "5.997 km²", tour: "Thiên Cầm", special: "Hiếu học." },
+            "Bình Định": { pop: "1.500.000 người", size: "6.066 km²", tour: "Eo Gió", special: "Đất võ." },
+            "Phú Yên": { pop: "1.000.000 người", size: "5.045 km²", tour: "Gành Đá Đĩa", special: "Hoa vàng cỏ xanh." },
+            "Kiên Giang": { pop: "1,7 triệu người", size: "6.348 km²", tour: "Phú Quốc", special: "Vùng biển đảo Tây Nam." },
+            "Long An": { pop: "1,7 triệu người", size: "4.492 km²", tour: "Làng nổi Tân Lập", special: "Vùng đồng bằng sông Cửu Long." }
         };
 
         const map = L.map('map', { zoomControl: false }).setView([16.0, 107.5], 6);
@@ -124,9 +126,6 @@
             });
         }
 
-        // Tải trực tiếp file qua script tag hoặc fetch file nhỏ, ở đây dùng cách tối ưu: 
-        // Nếu file JSON bị nặng trên hosting, ta đổi sang dùng fetch đúng tên file, nhưng kiểm tra lại tên.
-        // Đảm bảo file trong thư mục tên đúng chuẩn "gadm41_VNM_1.json"
         fetch('gadm41_VNM_1.json')
             .then(res => {
                 if (!res.ok) throw new Error("Không tìm thấy file json");
@@ -136,8 +135,6 @@
                 initMap(data);
             })
             .catch(err => {
-                console.log("Lỗi tải file, đang thử đường dẫn thay thế...");
-                // Dự phòng nếu đặt sai thư mục
                 fetch('./gadm41_VNM_1.json')
                     .then(res => res.json())
                     .then(data => initMap(data));
@@ -161,7 +158,7 @@
                             document.getElementById('info-pop').innerText = "Đang cập nhật";
                             document.getElementById('info-size').innerText = "Đang cập nhật";
                             document.getElementById('info-tour').innerText = "Đang cập nhật";
-                            document.getElementById('info-special').innerText = "Khu vực ngoài danh sách sáp nhập.";
+                            document.getElementById('info-special').innerText = "Khu vực ngoài danh sách.";
                         }
                     });
                 }
@@ -193,10 +190,10 @@
 
             const info = db[name];
             document.getElementById('info-name').innerText = name;
-            document.getElementById('info-pop').innerText = info.pop;
-            document.getElementById('info-size').innerText = info.size;
-            document.getElementById('info-tour').innerText = info.tour;
-            document.getElementById('info-special').innerText = info.special;
+            document.getElementById('info-pop').innerText = info ? "Khoảng " + info.pop : "Đang cập nhật";
+            document.getElementById('info-size').innerText = info ? "Khoảng " + info.size : "Đang cập nhật";
+            document.getElementById('info-tour').innerText = info ? info.tour : "Đang cập nhật";
+            document.getElementById('info-special').innerText = info ? info.special : "Đang cập nhật";
         }
 
         document.getElementById('search-input').oninput = (e) => {
