@@ -2,7 +2,8 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Bản Đồ Hành Chính Tương Tác</title>
+    <title>Bản Đồ Hành Chính Tương Tác — 34 Tỉnh Thành</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { margin: 0; display: flex; height: 100vh; background: #0b0f19; color: white; font-family: sans-serif; overflow: hidden; }
         #sidebar { width: 350px; background: #0f172a; border-right: 1px solid #1e293b; display: flex; flex-direction: column; z-index: 10; }
@@ -13,147 +14,187 @@
         .item { padding: 12px 15px; cursor: pointer; border-radius: 6px; margin-bottom: 4px; transition: 0.2s; font-size: 13px; font-weight: 500; }
         .item:hover { background: rgba(56, 189, 248, 0.15); }
         .item.active { background: rgba(250, 204, 21, 0.2); color: #facc15; border-left: 4px solid #facc15; }
-        #map { flex: 1; position: relative; background: #0b0f19; }
+        #map { flex: 1; position: relative; }
         #info { position: absolute; bottom: 30px; right: 30px; width: 340px; background: rgba(15, 23, 42, 0.95); padding: 20px; border-radius: 12px; border: 1px solid #38bdf8; z-index: 1000; box-shadow: 0 15px 35px rgba(0,0,0,0.5); backdrop-filter: blur(8px); }
         h4 { margin: 0 0 12px 0; color: #38bdf8; font-size: 16px; border-bottom: 1px solid #1e293b; padding-bottom: 8px; }
         .row { margin-bottom: 10px; font-size: 13px; }
         .label { color: #94a3b8; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; margin-bottom: 2px; }
         .value { color: #f8fafc; font-weight: 500; }
     </style>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
-<div id="sidebar">
-    <div class="search">
-        <input type="text" id="search-input" placeholder="🔍 Tìm kiếm tỉnh/thành...">
+
+    <div id="sidebar">
+        <div class="search">
+            <input type="text" id="search-input" placeholder="🔍 Tìm kiếm tỉnh/thành...">
+        </div>
+        <div id="list"></div>
     </div>
-    <div id="list"></div>
-</div>
-
-<div id="map">
-    <div id="info">
-        <h4 id="info-name">Chọn một địa điểm</h4>
-        <div class="row"><div class="label">Dân số</div><div id="info-pop" class="value">-</div></div>
-        <div class="row"><div class="label">Diện tích</div><div id="info-size" class="value">-</div></div>
-        <div class="row"><div class="label">Du lịch</div><div id="info-tour" class="value">-</div></div>
-        <div class="row"><div class="label">Đặc điểm</div><div id="info-special" class="value">-</div></div>
+    
+    <div id="map">
+        <div id="info">
+            <h4 id="info-name">Chọn một địa điểm</h4>
+            <div class="row"><div class="label">Dân số</div><div id="info-pop" class="value">-</div></div>
+            <div class="row"><div class="label">Diện tích</div><div id="info-size" class="value">-</div></div>
+            <div class="row"><div class="label">Du lịch</div><div id="info-tour" class="value">-</div></div>
+            <div class="row"><div class="label">Đặc điểm</div><div id="info-special" class="value">-</div></div>
+        </div>
     </div>
-</div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-    const db = {
-        "Huế": { pop: "1.165.400 người", size: "4.947,11 km²", tour: "Đại Nội, Chùa Thiên Mụ, Lăng vua các đời", special: "Thành phố trực thuộc trung ương, giữ nguyên trạng." },
-        "Hà Nội": { pop: "8.500.000 người", size: "3.359 km²", tour: "Hồ Gươm, Phố cổ, Văn Miếu", special: "Thủ đô, trung tâm chính trị và văn hóa cả nước." },
-        "TP. Hồ Chí Minh": { pop: "14.002.598 người", size: "6.772,59 km²", tour: "Dinh Độc Lập, Nhà thờ Đức Bà", special: "Sáp nhập TP.HCM, BR-VT, Bình Dương." },
-        "Hải Phòng": { pop: "4.664.124 người", size: "3.194,72 km²", tour: "Cát Bà, Đồ Sơn, Hòn Dấu", special: "Sáp nhập Hải Phòng và Hải Dương." },
-        "Đà Nẵng": { pop: "3.065.628 người", size: "11.859,59 km²", tour: "Bà Nà Hills, Cầu Rồng", special: "Sáp nhập Đà Nẵng và Quảng Nam." },
-        "Cần Thơ": { pop: "4.199.824 người", size: "6.360,83 km²", tour: "Chợ nổi Cái Răng, Bến Ninh Kiều", special: "Sáp nhập Cần Thơ, Sóc Trăng, Hậu Giang." },
-        "Lào Cai": { pop: "1.778.785 người", size: "13.256,92 km²", tour: "Sapa, Đỉnh Fansipan", special: "Sáp nhập Yên Bái và Lào Cai." },
-        "Thái Nguyên": { pop: "1.799.489 người", size: "8.375,21 km²", tour: "Hồ Núi Cốc, ATK Định Hóa", special: "Sáp nhập Bắc Kạn và Thái Nguyên." },
-        "Phú Thọ": { pop: "4.022.638 người", size: "9.361,38 km²", tour: "Khu di tích Đền Hùng", special: "Sáp nhập Vĩnh Phúc, Hòa Bình, Phú Thọ." },
-        "Bắc Ninh": { pop: "3.619.433 người", size: "4.718,6 km²", tour: "Chùa Dâu, Làng tranh Đông Hồ", special: "Sáp nhập Bắc Giang và Bắc Ninh." },
-        "Hưng Yên": { pop: "3.567.943 người", size: "2.514,81 km²", tour: "Phố Hiến, Đền Chử Đồng Tử", special: "Sáp nhập Thái Bình và Hưng Yên." },
-        "Ninh Bình": { pop: "4.412.264 người", size: "3.942,62 km²", tour: "Tràng An, Tam Cốc, Chùa Bái Đính", special: "Sáp nhập Hà Nam, Nam Định, Ninh Bình." },
-        "Quảng Trị": { pop: "1.870.845 người", size: "12.700 km²", tour: "Thành cổ Quảng Trị, Địa đạo Vịnh Mốc", special: "Sáp nhập Quảng Bình và Quảng Trị." },
-        "Quảng Ngãi": { pop: "2.161.755 người", size: "14.832,55 km²", tour: "Đảo Lý Sơn, Biển Mỹ Khê", special: "Sáp nhập Kon Tum và Quảng Ngãi." },
-        "Gia Lai": { pop: "3.583.693 người", size: "21.576,53 km²", tour: "Biển Hồ Pleiku, Thác Phú Cường", special: "Sáp nhập Bình Định và Gia Lai." },
-        "Khánh Hòa": { pop: "2.243.554 người", size: "8.555,86 km²", tour: "Vịnh Nha Trang, Đảo Bình Ba", special: "Sáp nhập Ninh Thuận và Khánh Hòa." },
-        "Lâm Đồng": { pop: "3.872.999 người", size: "24.233,07 km²", tour: "Đà Lạt, Hồ Tuyền Lâm", special: "Sáp nhập Đắk Nông, Bình Thuận, Lâm Đồng." },
-        "Đắk Lắk": { pop: "3.346.853 người", size: "18.096,40 km²", tour: "Buôn Đôn, Hồ Lắk", special: "Sáp nhập Phú Yên và Đắk Lắk." },
-        "Đồng Nai": { pop: "4.491.408 người", size: "12.737,18 km²", tour: "Nam Cát Tiên, Thác Trị An", special: "Sáp nhập Bình Phước và Đồng Nai." },
-        "Tây Ninh": { pop: "3.254.170 người", size: "8.536,44 km²", tour: "Núi Bà Đen, Tòa thánh Tây Ninh", special: "Sáp nhập Long An và Tây Ninh." },
-        "Vĩnh Long": { pop: "4.257.581 người", size: "6.296,20 km²", tour: "Cù lao An Bình, Chợ nổi Trà Ôn", special: "Sáp nhập Bến Tre, Trà Vinh, Vĩnh Long." },
-        "Đồng Tháp": { pop: "4.370.046 người", size: "5.938,64 km²", tour: "Làng hoa Sa Đéc, Xẻo Quít", special: "Sáp nhập Tiền Giang và Đồng Tháp." },
-        "Cà Mau": { pop: "2.606.672 người", size: "7.942,39 km²", tour: "Mũi Cà Mau, U Minh Hạ", special: "Sáp nhập Bạc Liêu và Cà Mau." },
-        "An Giang": { pop: "4.952.238 người", size: "9.888,91 km²", tour: "Rừng tràm Trà Sư, Núi Sam", special: "Sáp nhập Kiên Giang và An Giang." },
-        "Tuyên Quang": { pop: "1.800.000 người", size: "13.795,50 km²", tour: "Tân Trào, Cao nguyên đá Đồng Văn", special: "Sáp nhập Hà Giang và Tuyên Quang. Trung tâm hành chính tại TP. Tuyên Quang." },
-        "Lạng Sơn": { pop: "800.000 người", size: "8.310 km²", tour: "Đồng Đăng, Ải Chi Lăng", special: "Cửa khẩu biên giới sầm uất." },
-        "Sơn La": { pop: "1.280.000 người", size: "14.123 km²", tour: "Mộc Châu, Nhà tù Sơn La", special: "Trung tâm du lịch vùng Tây Bắc." },
-        "Lai Châu": { pop: "470.000 người", size: "9.068 km²", tour: "Đèo Ô Quy Hồ, Bản Sì Thâu Chải", special: "Vùng núi cao biên giới." },
-        "Điện Biên": { pop: "630.000 người", size: "9.541 km²", tour: "Đồi A1, Cánh đồng Mường Thanh", special: "Di tích lịch sử chiến thắng Điện Biên Phủ." },
-        "Thanh Hóa": { pop: "3.645.000 người", size: "11.114 km²", tour: "Sầm Sơn, Thành Nhà Hồ", special: "Cửa ngõ Bắc - Trung Bộ." },
-        "Nghệ An": { pop: "3.400.000 người", size: "16.490 km²", tour: "Làng Sen, Cửa Lò", special: "Diện tích lớn nhất cả nước." },
-        "Hà Tĩnh": { pop: "1.300.000 người", size: "5.997 km²", tour: "Thiên Cầm, Ngã ba Đồng Lộc", special: "Vùng đất hiếu học." },
-        "Quảng Ninh": { pop: "1.320.000 người", size: "6.110 km²", tour: "Vịnh Hạ Long, Yên Tử", special: "Trung tâm du lịch và khai thác than." }
-    };
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const db = {
+            "Hà Nội": { pop: "8.500.000 người", size: "3.359 km²", tour: "Hồ Gươm, Chùa Một Cột", special: "Thủ đô, giữ nguyên giới hạn." },
+            "Đà Nẵng": { pop: "3.065.628 người", size: "11.859,59 km²", tour: "Bà Nà Hills, Cầu Rồng", special: "Sáp nhập Đà Nẵng + Quảng Nam." },
+            "Hải Phòng": { pop: "4.664.124 người", size: "3.194,72 km²", tour: "Cát Bà, Đồ Sơn", special: "Sáp nhập Hải Phòng + Hải Dương." },
+            "Cần Thơ": { pop: "4.199.824 người", size: "6.360,83 km²", tour: "Chợ nổi Cái Răng", special: "Sáp nhập Cần Thơ + Hậu Giang + Sóc Trăng." },
+            "TP. Hồ Chí Minh": { pop: "14.002.598 người", size: "6.772,59 km²", tour: "Dinh Độc Lập, Bến Thành", special: "Sáp nhập TP.HCM + BR-VT + Bình Dương." },
+            "Huế": { pop: "1.230.000 người", size: "5.009 km²", tour: "Kinh Thành, Lăng Khải Định", special: "Giữ nguyên, trung tâm văn hóa cố đô." },
+            "Đồng Nai": { pop: "4.491.408 người", size: "12.737,18 km²", tour: "Vườn quốc gia Nam Cát Tiên", special: "Sáp nhập Đồng Nai + Bình Phước → nâng lên TP." },
+            "An Giang": { pop: "4.952.238 người", size: "9.888,91 km²", tour: "Khu du lịch Trà Sư", special: "Sáp nhập An Giang + Kiên Giang." },
+            "Bắc Ninh": { pop: "3.619.433 người", size: "4.718,6 km²", tour: "Chùa Dâu, Lý Thái Tổ", special: "Sáp nhập Bắc Ninh + Bắc Giang." },
+            "Cà Mau": { pop: "2.606.672 người", size: "7.942,39 km²", tour: "Mũi Cà Mau", special: "Sáp nhập Cà Mau + Bạc Liêu." },
+            "Cao Bằng": { pop: "540.000 người", size: "6.700 km²", tour: "Thác Bản Giốc", special: "Giữ nguyên, biên giới phía Bắc." },
+            "Đắk Lắk": { pop: "3.346.853 người", size: "18.096,40 km²", tour: "Khu du lịch Buôn Đôn", special: "Sáp nhập Đắk Lắk + Phú Yên." },
+            "Điện Biên": { pop: "630.000 người", size: "9.541 km²", tour: "Đồi A1, Điện Biên Phủ", special: "Giữ nguyên, chiến thắng lịch sử." },
+            "Đồng Tháp": { pop: "4.370.046 người", size: "5.938,64 km²", tour: "Làng hoa Sa Đéc", special: "Sáp nhập Đồng Tháp + Tiền Giang." },
+            "Gia Lai": { pop: "3.583.693 người", size: "21.576,53 km²", tour: "Biển Hồ, Tháp Chàm", special: "Sáp nhập Gia Lai + Bình Định." },
+            "Hà Tĩnh": { pop: "1.300.000 người", size: "5.997 km²", tour: "Bãi biển Thiên Cầm", special: "Giữ nguyên, vùng đất hiếu học." },
+            "Hưng Yên": { pop: "3.567.943 người", size: "2.514,81 km²", tour: "Phố Hiến, Văn miếu", special: "Sáp nhập Hưng Yên + Thái Bình." },
+            "Khánh Hòa": { pop: "2.243.554 người", size: "8.555,86 km²", tour: "Vịnh Nha Trang, Đảo Vinpearl", special: "Sáp nhập Khánh Hòa + Ninh Thuận." },
+            "Lai Châu": { pop: "470.000 người", size: "9.068 km²", tour: "Đèo Ô Quy Hồ", special: "Giữ nguyên, vùng cao Tây Bắc." },
+            "Lào Cai": { pop: "1.778.785 người", size: "13.256,92 km²", tour: "Sa Pa, Đỉnh Fansipan", special: "Sáp nhập Lào Cai + Yên Bái." },
+            "Lạng Sơn": { pop: "800.000 người", size: "8.310 km²", tour: "Cửa khẩu Đồng Đăng", special: "Giữ nguyên, biên giới phía Bắc." },
+            "Lâm Đồng": { pop: "3.872.999 người", size: "24.233,07 km²", tour: "Đà Lạt, Hồ Xuân Hương", special: "Sáp nhập Lâm Đồng + Đắk Nông + Bình Thuận." },
+            "Nghệ An": { pop: "3.400.000 người", size: "16.490 km²", tour: "Khu di tích Làng Sen", special: "Giữ nguyên, quê Chủ tịch Hồ Chí Minh." },
+            "Ninh Bình": { pop: "4.412.264 người", size: "3.942,62 km²", tour: "Quần thể Tràng An", special: "Sáp nhập Ninh Bình + Hà Nam + Nam Định." },
+            "Phú Thọ": { pop: "4.022.638 người", size: "9.361,38 km²", tour: "Khu di tích Đền Hùng", special: "Sáp nhập Phú Thọ + Hòa Bình + Vĩnh Phúc." },
+            "Quảng Ninh": { pop: "1.320.000 người", size: "6.000 km²", tour: "Vịnh Hạ Long", special: "Giữ nguyên, di sản thiên nhiên thế giới." },
+            "Quảng Trị": { pop: "1.870.845 người", size: "12.700 km²", tour: "Thành cổ Quảng Trị", special: "Sáp nhập Quảng Trị + Quảng Bình." },
+            "Quảng Ngãi": { pop: "2.161.755 người", size: "14.832,55 km²", tour: "Đảo Lý Sơn", special: "Sáp nhập Quảng Ngãi + Kon Tum." },
+            "Sơn La": { pop: "1.280.000 người", size: "14.123 km²", tour: "Mộc Châu, Đèo Pha Đin", special: "Giữ nguyên, Tây Bắc." },
+            "Thái Nguyên": { pop: "1.799.489 người", size: "8.375,21 km²", tour: "Hồ Núi Cốc", special: "Sáp nhập Thái Nguyên + Bắc Kạn." },
+            "Thanh Hóa": { pop: "3.645.000 người", size: "11.114 km²", tour: "Bãi biển Sầm Sơn", special: "Giữ nguyên, miền Bắc Trung Bộ." },
+            "Tuyên Quang": { pop: "780.000 người", size: "13.795 km²", tour: "Thác Tát Mát", special: "Sáp nhập Tuyên Quang + Hà Giang." },
+            "Tây Ninh": { pop: "3.254.170 người", size: "8.536,44 km²", tour: "Núi Bà Đen", special: "Sáp nhập Tây Ninh + Long An." },
+            "Vĩnh Long": { pop: "4.257.581 người", size: "6.296,20 km²", tour: "Cù lao An Bình", special: "Sáp nhập Vĩnh Long + Bến Tre + Trà Vinh." }
+        };
 
-    const map = L.map('map', { zoomControl: false });
-    L.control.zoom({ position: 'topright' }).addTo(map);
+        const map = L.map('map', { zoomControl: false }).setView([16.0, 107.5], 6);
+        L.control.zoom({ position: 'topright' }).addTo(map);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19, subdomains: 'abcd', attribution: '&copy; CartoDB'
-    }).addTo(map);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            subdomains: 'abcd'
+        }).addTo(map);
 
-    let geojsonLayer = null;
-    let activeLayer = null;
-    const sortedKeys = Object.keys(db).sort();
-    const listContainer = document.getElementById('list');
+        let geojsonLayer = null;
+        let activeLayer = null;
+        const sortedKeys = Object.keys(db).sort();
+        const listContainer = document.getElementById('list');
 
-    function cleanStr(str) {
-        if (!str) return '';
-        return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
-    }
+        function cleanStr(str) {
+            if (!str) return '';
+            return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
+        }
 
-    function findDbName(gadmName) {
-        if (!gadmName) return null;
-        const gadm = gadmName.toLowerCase();
-        if (gadm.includes("ho chi minh")) return "TP. Hồ Chí Minh";
-        if (gadm.includes("hue") || gadm.includes("thua thien")) return "Huế";
-        if (gadm.includes("binh dinh")) return "Gia Lai";
-        // Gộp Hà Giang vào Tuyên Quang
-        if (gadm.includes("ha giang") || gadm.includes("tuyen quang")) return "Tuyên Quang";
-        
-        const cleanGadm = cleanStr(gadmName);
-        return sortedKeys.find(key => cleanStr(key) === cleanGadm || cleanGadm.includes(cleanStr(key))) || null;
-    }
+        function findDbName(gadmName) {
+            if (!gadmName) return null;
+            if (gadmName.toLowerCase().includes("ho chi minh")) return "TP. Hồ Chí Minh";
+            const cleanGadm = cleanStr(gadmName);
+            return sortedKeys.find(key => cleanStr(key) === cleanGadm || cleanGadm.includes(cleanStr(key))) || null;
+        }
 
-    function renderList(filter = "") {
-        listContainer.innerHTML = '';
-        sortedKeys.forEach(name => {
-            if (filter && !cleanStr(name).includes(cleanStr(filter))) return;
-            const div = document.createElement('div');
-            div.className = 'item'; div.innerText = name; div.dataset.name = name;
-            div.onclick = () => {
-                const targetFeature = geojsonLayer.getLayers().find(l => findDbName(l.feature.properties.ten_tinh) === name);
-                if (targetFeature) highlightAndSelect(name, targetFeature);
-            };
-            listContainer.appendChild(div);
-        });
-    }
+        function renderList(filter = "") {
+            listContainer.innerHTML = '';
+            sortedKeys.forEach(name => {
+                if (filter && !cleanStr(name).includes(cleanStr(filter))) return;
 
-    fetch('vietnam_34_light.geojson')
-        .then(res => res.json())
-        .then(data => {
+                const div = document.createElement('div');
+                div.className = 'item';
+                div.innerText = name;
+                div.dataset.name = name;
+                div.onclick = () => {
+                    const targetFeature = geojsonLayer.getLayers().find(l => findDbName(l.feature.properties.ten_tinh) === name);
+                    if (targetFeature) {
+                        highlightAndSelect(name, targetFeature);
+                    }
+                };
+                listContainer.appendChild(div);
+            });
+        }
+
+        fetch('vietnam_34_light.geojson')
+            .then(res => {
+                if (!res.ok) throw new Error("Không tìm thấy file geojson");
+                return res.json();
+            })
+            .then(data => {
+                initMap(data);
+            })
+            .catch(err => {
+                console.log("Lỗi tải file:", err);
+            });
+
+        function initMap(data) {
             geojsonLayer = L.geoJSON(data, {
                 style: { color: '#38bdf8', weight: 1.5, fillOpacity: 0.25, fillColor: '#38bdf8' },
                 onEachFeature: (feature, layer) => {
                     const dbName = findDbName(feature.properties.ten_tinh);
                     layer.on('click', () => {
-                        if (dbName) highlightAndSelect(dbName, layer);
+                        if (dbName) {
+                            highlightAndSelect(dbName, layer);
+                        } else {
+                            if (activeLayer) geojsonLayer.resetStyle(activeLayer);
+                            activeLayer = layer;
+                            layer.setStyle({ color: '#facc15', fillColor: '#facc15', fillOpacity: 0.4, weight: 2.5 });
+                            document.querySelectorAll('.item').forEach(i => i.classList.remove('active'));
+                            
+                            document.getElementById('info-name').innerText = feature.properties.ten_tinh || "Không rõ tên";
+                            document.getElementById('info-pop').innerText = "Đang cập nhật";
+                            document.getElementById('info-size').innerText = "Đang cập nhật";
+                            document.getElementById('info-tour').innerText = "Đang cập nhật";
+                            document.getElementById('info-special').innerText = "Khu vực ngoài danh sách sáp nhập.";
+                        }
                     });
                 }
             }).addTo(map);
-            map.fitBounds(geojsonLayer.getBounds());
+
             renderList();
-        });
+            if (sortedKeys.length > 0) {
+                const firstKey = sortedKeys[0];
+                const firstLayer = geojsonLayer.getLayers().find(l => findDbName(l.feature.properties.ten_tinh) === firstKey);
+                if (firstLayer) highlightAndSelect(firstKey, firstLayer);
+            }
+        }
 
-    function highlightAndSelect(name, layer) {
-        if (activeLayer) geojsonLayer.resetStyle(activeLayer);
-        activeLayer = layer;
-        layer.setStyle({ color: '#facc15', fillColor: '#facc15', fillOpacity: 0.4, weight: 2.5 });
-        map.fitBounds(layer.getBounds(), { padding: [50, 50], maxZoom: 10 });
-        document.querySelectorAll('.item').forEach(i => i.classList.remove('active'));
-        const activeItem = Array.from(document.querySelectorAll('.item')).find(i => i.dataset.name === name);
-        if (activeItem) { activeItem.classList.add('active'); activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
-        document.getElementById('info-name').innerText = name;
-        document.getElementById('info-pop').innerText = db[name].pop;
-        document.getElementById('info-size').innerText = db[name].size;
-        document.getElementById('info-tour').innerText = db[name].tour;
-        document.getElementById('info-special').innerText = db[name].special;
-    }
+        function highlightAndSelect(name, layer) {
+            if (activeLayer) {
+                geojsonLayer.resetStyle(activeLayer);
+            }
+            activeLayer = layer;
+            
+            layer.setStyle({ color: '#facc15', fillColor: '#facc15', fillOpacity: 0.4, weight: 2.5 });
+            map.fitBounds(layer.getBounds(), { padding: [50, 50], maxZoom: 10 });
 
-    document.getElementById('search-input').oninput = (e) => renderList(e.target.value);
-</script>
+            document.querySelectorAll('.item').forEach(i => i.classList.remove('active'));
+            const activeItem = Array.from(document.querySelectorAll('.item')).find(i => i.dataset.name === name);
+            if (activeItem) {
+                activeItem.classList.add('active');
+                activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            const info = db[name];
+            document.getElementById('info-name').innerText = name;
+            document.getElementById('info-pop').innerText = info.pop;
+            document.getElementById('info-size').innerText = info.size;
+            document.getElementById('info-tour').innerText = info.tour;
+            document.getElementById('info-special').innerText = info.special;
+        }
+
+        document.getElementById('search-input').oninput = (e) => {
+            renderList(e.target.value);
+        };
+    </script>
 </body>
 </html>
