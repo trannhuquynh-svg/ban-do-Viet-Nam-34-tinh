@@ -79,7 +79,8 @@
         "Phú Yên": { pop: "1.000.000 người", size: "5.045 km²", tour: "Gành Đá Đĩa, Bãi Xép, Mũi Điện", special: "Xứ sở hoa vàng trên cỏ xanh thơ mộng." }
     };
 
-    const map = L.map('map', { zoomControl: false }).setView([16.0, 107.5], 6);
+    // Khởi tạo bản đồ tạm thời
+    const map = L.map('map', { zoomControl: false });
     L.control.zoom({ position: 'topright' }).addTo(map);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -100,10 +101,7 @@
     function findDbName(gadmName) {
         if (!gadmName) return null;
         if (gadmName.toLowerCase().includes("ho chi minh")) return "TP. Hồ Chí Minh";
-        
-        // Fix: Bắt dính cả "HUẾ", "Huế", "hue" hay "Thừa Thiên Huế" trong file GeoJSON
         if (gadmName.toUpperCase() === "HUẾ" || gadmName.toLowerCase().includes("hue") || gadmName.toLowerCase().includes("thua thien")) return "Huế";
-        
         const cleanGadm = cleanStr(gadmName);
         return sortedKeys.find(key => cleanStr(key) === cleanGadm || cleanGadm.includes(cleanStr(key))) || null;
     }
@@ -162,6 +160,9 @@
                 });
             }
         }).addTo(map);
+
+        // Tự động căn khung bản đồ ôm trọn toàn bộ Việt Nam từ file GeoJSON
+        map.fitBounds(geojsonLayer.getBounds());
 
         renderList();
         if (sortedKeys.length > 0) {
