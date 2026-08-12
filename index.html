@@ -13,13 +13,14 @@
         .item { padding: 12px 15px; cursor: pointer; border-radius: 6px; margin-bottom: 4px; transition: 0.2s; font-size: 13px; font-weight: 500; }
         .item:hover { background: rgba(56, 189, 248, 0.15); }
         .item.active { background: rgba(250, 204, 21, 0.2); color: #facc15; border-left: 4px solid #facc15; }
-        #map { flex: 1; position: relative; }
+        #map { flex: 1; position: relative; background: #111827; }
         #info { position: absolute; bottom: 30px; right: 30px; width: 340px; background: rgba(15, 23, 42, 0.95); padding: 20px; border-radius: 12px; border: 1px solid #38bdf8; z-index: 1000; box-shadow: 0 15px 35px rgba(0,0,0,0.5); backdrop-filter: blur(8px); }
         h4 { margin: 0 0 12px 0; color: #38bdf8; font-size: 16px; border-bottom: 1px solid #1e293b; padding-bottom: 8px; }
         .row { margin-bottom: 10px; font-size: 13px; }
         .label { color: #94a3b8; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; margin-bottom: 2px; }
         .value { color: #f8fafc; font-weight: 500; }
     </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
 <div id="sidebar">
@@ -79,13 +80,13 @@
         "Phú Yên": { pop: "1.000.000 người", size: "5.045 km²", tour: "Gành Đá Đĩa, Bãi Xép, Mũi Điện", special: "Xứ sở hoa vàng trên cỏ xanh thơ mộng." }
     };
 
-    // Khởi tạo bản đồ tạm thời
-    const map = L.map('map', { zoomControl: false });
+    const map = L.map('map', { zoomControl: false }).setView([16.0, 107.5], 6);
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    // Sử dụng tile layer chuẩn để không bị lỗi ô vuông nền
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        subdomains: 'abcd'
+        attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
     let geojsonLayer = null;
@@ -139,7 +140,7 @@
 
     function initMap(data) {
         geojsonLayer = L.geoJSON(data, {
-            style: { color: '#38bdf8', weight: 1.5, fillOpacity: 0.25, fillColor: '#38bdf8' },
+            style: { color: '#38bdf8', weight: 1.5, fillOpacity: 0.25, fillColor: '#0284c7' },
             onEachFeature: (feature, layer) => {
                 const dbName = findDbName(feature.properties.ten_tinh);
                 layer.on('click', () => {
@@ -161,7 +162,6 @@
             }
         }).addTo(map);
 
-        // Tự động căn khung bản đồ ôm trọn toàn bộ Việt Nam từ file GeoJSON
         map.fitBounds(geojsonLayer.getBounds());
 
         renderList();
