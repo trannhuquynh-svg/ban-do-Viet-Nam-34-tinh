@@ -100,6 +100,10 @@
     function findDbName(gadmName) {
         if (!gadmName) return null;
         if (gadmName.toLowerCase().includes("ho chi minh")) return "TP. Hồ Chí Minh";
+        
+        // Fix: Bắt dính cả "HUẾ", "Huế", "hue" hay "Thừa Thiên Huế" trong file GeoJSON
+        if (gadmName.toUpperCase() === "HUẾ" || gadmName.toLowerCase().includes("hue") || gadmName.toLowerCase().includes("thua thien")) return "Huế";
+        
         const cleanGadm = cleanStr(gadmName);
         return sortedKeys.find(key => cleanStr(key) === cleanGadm || cleanGadm.includes(cleanStr(key))) || null;
     }
