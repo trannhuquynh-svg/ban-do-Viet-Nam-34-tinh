@@ -76,7 +76,6 @@
         "Thanh Hóa": { pop: "3.645.000 người", size: "11.114 km²", tour: "Biển Sầm Sơn, Thành Nhà Hồ, Suối cá thần Cẩm Lương", special: "Cửa ngõ kết nối Bắc Bộ và Trung Bộ." },
         "Nghệ An": { pop: "3.400.000 người", size: "16.490 km²", tour: "Làng Sen quê Bác, Bãi biển Cửa Lò, Vườn quốc gia Pù Mát", special: "Quê hương Chủ tịch Hồ Chí Minh, diện tích lớn nhất cả nước." },
         "Hà Tĩnh": { pop: "1.300.000 người", size: "5.997 km²", tour: "Bãi biển Thiên Cầm, Ngã ba Đồng Lộc", special: "Vùng đất hiếu học và kiên cường trong chiến tranh." },
-        "Bình Định": { pop: "1.500.000 người", size: "6.066 km²", tour: "Eo Gió, Kỳ Co, Tháp Chàm Bánh Ít", special: "Đất võ trời văn, quê hương vua Quang Trung." },
         "Phú Yên": { pop: "1.000.000 người", size: "5.045 km²", tour: "Gành Đá Đĩa, Bãi Xép, Mũi Điện", special: "Xứ sở hoa vàng trên cỏ xanh thơ mộng." },
         "Quảng Ninh": { pop: "1.320.000 người", size: "6.110 km²", tour: "Vịnh Hạ Long, Tuần Châu, Yên Tử", special: "Vùng đất di sản thiên nhiên thế giới và trung tâm khai thác than." }
     };
@@ -104,6 +103,9 @@
         if (!gadmName) return null;
         if (gadmName.toLowerCase().includes("ho chi minh")) return "TP. Hồ Chí Minh";
         if (gadmName.toUpperCase() === "HUẾ" || gadmName.toLowerCase().includes("hue") || gadmName.toLowerCase().includes("thua thien")) return "Huế";
+        // Gộp Bình Định vào Gia Lai
+        if (gadmName.toLowerCase().includes("binh dinh")) return "Gia Lai";
+        
         const cleanGadm = cleanStr(gadmName);
         return sortedKeys.find(key => cleanStr(key) === cleanGadm || cleanGadm.includes(cleanStr(key))) || null;
     }
